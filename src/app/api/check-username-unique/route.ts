@@ -1,76 +1,69 @@
-import dbConnect from "@/lib/dbConnect";
-import UserModel from "@/model/User";
+import dbConnect from '@/lib/dbConnect';
+import UserModel from '@/model/User';
+import { z } from 'zod';
 import { usernameValidation } from "@/schemas/signupSchema";
-import { z } from "zod";
-
 
 const UsernameQuerySchema = z.object({
-    username: usernameValidation
-})
+    username: usernameValidation,
+});
 
 export async function GET(request: Request) {
     await dbConnect();
-    // localhost:3000/api/check-username-unique?username=arnab
+
     try {
         const { searchParams } = new URL(request.url);
-        const queryParam = {
-            username: searchParams.get("username")
-        }
-        // validate with zod
-        const result = UsernameQuerySchema.safeParse(queryParam);
-        console.log(result);
+        const queryParams = {
+            username: searchParams.get('username'),
+        };
+
+        const result = UsernameQuerySchema.safeParse(queryParams);
+
         if (!result.success) {
             const usernameErrors = result.error.format().username?._errors || [];
             return Response.json(
                 {
                     success: false,
-                    message: usernameErrors[0] || "Invalid username"
+                    message:
+                        usernameErrors?.length > 0
+                            ? usernameErrors.join(', ')
+                            : 'Invalid query parameters',
                 },
-                {
-                    status: 400
-                }
-            )
+                { status: 400 }
+            );
         }
 
         const { username } = result.data;
 
-        const existedUser = await UserModel.findOne({
+        const existingVerifiedUser = await UserModel.findOne({
             username,
-            isVerified: true
+            isVerified: true,
         });
 
-        if (existedUser) {
+        if (existingVerifiedUser) {
             return Response.json(
                 {
                     success: false,
-                    message: "Username already exist"
+                    message: 'Username is already taken',
                 },
-                {
-                    status: 400
-                }
-            )
+                { status: 200 }
+            );
         }
 
         return Response.json(
             {
                 success: true,
-                message: "Username available"
+                message: 'Username is unique',
             },
-            {
-                status: 200
-            }
-        )
-
+            { status: 200 }
+        );
     } catch (error) {
-        console.log("Error in check-username-unique route: ", error);
+        console.error('Error checking username:', error);
         return Response.json(
             {
                 success: false,
-                message: "An error occurred while checking the username"
+                message: 'Error checking username',
             },
-            {
-                status: 500
-            }
-        )
+            { status: 500 }
+        );
     }
 }
