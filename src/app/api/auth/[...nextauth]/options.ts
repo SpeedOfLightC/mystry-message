@@ -6,6 +6,7 @@ import UserModel from '@/model/User';
 
 export const authOptions: NextAuthOptions = {
     providers: [
+        // Have to return user from here to get the user object in session
         CredentialsProvider({
             id: 'credentials',
             name: 'Credentials',
