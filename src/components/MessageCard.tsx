@@ -25,6 +25,7 @@ import { Message } from "@/model/User";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 import { ApiResponse } from "@/types/ApiResponse";
+import mongoose from "mongoose";
 
 interface MessageCardProps {
   message: Message;
@@ -47,8 +48,15 @@ const MessageCard: React.FC<MessageCardProps> = (props) => {
         description: "Message has been deleted successfully",
       });
 
-      onMessageDelete(message._id);
-    } catch (error) {}
+      onMessageDelete(message._id as string);
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to delete message",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
